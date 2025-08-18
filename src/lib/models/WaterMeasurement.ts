@@ -1,9 +1,9 @@
 /**
  * Represents a single measurement record from the water quality monitoring station
- * Updated for the more granular SM.xls file with 10-minute intervals
+ * Updated for the new SM.xls format with 10-minute intervals
  */
 export interface WaterMeasurement {
-  /** Date and time of the measurement in DD.MM.YYYY HH:mm:ss format */
+  /** Date and time of the measurement in ISO format (converted from DD.MM.YYYY HH:mm:ss) */
   datetime: string;
 
   /** Global radiation in J/cm²min */
@@ -120,11 +120,72 @@ export function parseNumericValue(
 }
 
 /**
- * Helper function to parse datetime in DD.MM.YYYY HH:mm:ss format
+ * Helper function to parse datetime in DD.MM.YYYY HH:mm:ss format and convert to ISO string
  */
-export function parseDateTime(dateTimeString: string): Date | null {
+export function parseDateTime(dateTimeString: string): string | null {
   if (!dateTimeString || typeof dateTimeString !== "string") {
     return null;
+  }
+
+  // Format: "02.08.2025 00:10:00"
+  const parts = dateTimeString.trim().split(" ");
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const datePart = parts[0];
+  const timePart = parts[1];
+
+  // Parse date part
+  const dateElements = datePart.split(".");
+  if (dateElements.length !== 3) {
+    return null;
+  }
+
+  const day = parseInt(dateElements[0], 10);
+  const month = parseInt(dateElements[1], 10);
+  const year = parseInt(dateElements[2], 10);
+
+  // Parse time part
+  const timeElements = timePart.split(":");
+  if (timeElements.length !== 3) {
+    return null;
+  }
+
+  const hours = parseInt(timeElements[0], 10);
+  const minutes = parseInt(timeElements[1], 10);
+  const seconds = parseInt(timeElements[2], 10);
+
+  if (
+    isNaN(day) ||
+    isNaN(month) ||
+    isNaN(year) ||
+    isNaN(hours) ||
+    isNaN(minutes) ||
+    isNaN(seconds)
+  ) {
+    return null;
+  }
+
+  // Create date (month is 0-indexed in JavaScript Date)
+  const date = new Date(year, month - 1, day, hours, minutes, seconds);
+
+  // Return ISO string
+  return date.toISOString();
+}
+
+/**
+ * Helper function to parse datetime and return Date object (for internal use)
+ */
+export function parseDateTimeToDate(dateTimeString: string): Date | null {
+  if (!dateTimeString || typeof dateTimeString !== "string") {
+    return null;
+  }
+
+  // If it's already an ISO string, parse it directly
+  if (dateTimeString.includes("T")) {
+    const date = new Date(dateTimeString);
+    return isNaN(date.getTime()) ? null : date;
   }
 
   // Format: "02.08.2025 00:10:00"
@@ -179,9 +240,9 @@ export function parseDate(dateString: string): Date | null {
     return null;
   }
 
-  // If it contains time, use parseDateTime
+  // If it contains time, use parseDateTimeToDate
   if (dateString.includes(" ")) {
-    return parseDateTime(dateString);
+    return parseDateTimeToDate(dateString);
   }
 
   const parts = dateString.trim().split(".");

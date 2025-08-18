@@ -7,6 +7,7 @@ import {
   WaterMeasurementDataset,
   COLUMN_MAPPING,
   parseNumericValue,
+  parseDateTime,
 } from "@/lib/models/WaterMeasurement";
 
 const CACHE_FILE_PATH = path.join(process.cwd(), "cache", "SM.json");
@@ -151,7 +152,7 @@ function parseExcelData(arrayBuffer: ArrayBuffer): WaterMeasurementDataset {
     if (!datetimeValue) continue; // Skip rows without datetime
 
     const measurement: WaterMeasurement = {
-      datetime: String(datetimeValue),
+      datetime: parseDateTime(String(datetimeValue)) || String(datetimeValue),
       globalRadiation: parseNumericValue(row[COLUMN_MAPPING.GLOBAL_RADIATION]),
       conductivity: parseNumericValue(row[COLUMN_MAPPING.CONDUCTIVITY]),
       airTemperature: parseNumericValue(row[COLUMN_MAPPING.AIR_TEMPERATURE]),
