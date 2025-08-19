@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { WaterLevelDataset } from "../models/WaterLevel";
+import { WaterLevelStation } from "../models/WaterLevel";
 
 /**
  * Fetches water level data from the API
  */
-export async function fetchWaterLevel(): Promise<WaterLevelDataset> {
+export async function fetchWaterLevel(): Promise<WaterLevelStation> {
   const response = await fetch("/api/water/level");
 
   if (!response.ok) {
@@ -31,8 +31,8 @@ export async function fetchWaterLevel(): Promise<WaterLevelDataset> {
  * React Query hook to fetch water level data
  * Uses the API endpoint with caching
  */
-export function useWaterLevel() {
-  return useQuery<WaterLevelDataset>({
+export function useWaterLevelStation() {
+  return useQuery<WaterLevelStation>({
     queryKey: ["waterLevel"],
     queryFn: fetchWaterLevel,
     staleTime: 1000 * 60 * 5, // 5 minutes (shorter than cache since water level changes more frequently)

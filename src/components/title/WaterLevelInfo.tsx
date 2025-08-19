@@ -1,4 +1,4 @@
-import { useWaterLevel } from "@/lib/hooks/useWaterLevel";
+import { useWaterLevelStation } from "@/lib/hooks/useWaterLevel";
 import {
   Box,
   Chip,
@@ -17,15 +17,28 @@ import {
 } from "@mui/material";
 import InfoOutlineIcon from "@mui/icons-material/InfoOutline";
 import { useState } from "react";
-import { WaterLevelDataset } from "@/lib/models/WaterLevel";
+import { WaterLevelStation } from "@/lib/models/WaterLevel";
+import { Line } from "react-chartjs-2";
+import {
+  CategoryScale,
+  Chart,
+  Filler,
+  LinearScale,
+  LineElement,
+  PointElement,
+} from "chart.js";
+import { AreaChart } from "@mui/icons-material";
+
+Chart.register(LineElement, CategoryScale, LinearScale, PointElement, Filler);
 
 export default function WaterLevelInfo() {
+  const theme = useTheme();
   const [waterLevelDialogOpen, setWaterLevelDialogOpen] = useState(false);
   const {
-    data: waterLevel,
+    data: station,
     isLoading: isLoadingWaterLevel,
     error: errorWaterLevel,
-  } = useWaterLevel();
+  } = useWaterLevelStation();
 
   if (isLoadingWaterLevel) {
     return <CircularProgress />;
@@ -33,53 +46,92 @@ export default function WaterLevelInfo() {
   if (errorWaterLevel) {
     return <Typography>Error loading water level</Typography>;
   }
-  if (!waterLevel) {
+  if (!station) {
     return <Typography>No water level data available</Typography>;
   }
 
-  function getChipColor(waterLevelState: string) {
-    switch (waterLevelState) {
-      case "low":
-        return "default";
-      case "medium":
-        return "success";
-      case "high":
-        return "error";
-    }
-  }
+  const lastMeasurement = station?.timeseries[station.timeseries.length - 1];
 
   return (
     <>
       <Box
         sx={{
-          display: "flex",
+          display: "grid",
           gap: 2,
+          gridTemplateColumns: "1fr min-content min-content",
           whiteSpace: "nowrap",
           alignItems: "center",
-          justifyContent: "space-between",
           flexGrow: 1,
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
+        <Box sx={{ height: "40px", minWidth: 0 }}>
+          <Line
+            data={{
+              labels: [
+                ...station.timeseries.map((ts) => ts.value),
+                ...station?.timeseriesForecast.map((ts) => ts.value),
+              ],
+              datasets: [
+                {
+                  data: station?.timeseries.map((ts) => ts.value),
+
+                  borderColor: theme.palette.primary.main,
+                  backgroundColor: theme.palette.primary.light + "40", // 25% opacity
+                  fill: true, // Fill to zero baseline
+                  pointRadius: 0,
+                  borderWidth: 2,
+                },
+                {
+                  data: [
+                    ...station.timeseries.map(() => null),
+                    ...station?.timeseriesForecast.map((ts) => ts.value),
+                  ],
+                  borderColor: theme.palette.secondary.main,
+                  backgroundColor: theme.palette.secondary.light + "40", // 25% opacity
+                  fill: true,
+                  pointRadius: 0,
+                  borderWidth: 2,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false,
+                },
+              },
+              scales: {
+                x: {
+                  display: false,
+                },
+                y: {
+                  display: false,
+                  beginAtZero: true,
+                },
+              },
+              elements: {
+                line: {
+                  tension: 0.1,
+                },
+              },
+            }}
+          />
+        </Box>
         <Typography variant="body2" pl={"24px"}>
-          {waterLevel.currentLevel} cm
-        </Typography>
-        <Typography variant="body2" pl={"24px"}>
-          {waterLevel.currentFlow ? `${waterLevel.currentFlow} m³/s` : ""}
+          {lastMeasurement.value ?? "N/A"} cm
         </Typography>
         <div>
-          {waterLevel.waterLevelState && (
-            <Chip
-              color={getChipColor(waterLevel.waterLevelState)}
-              label={waterLevel.waterLevelState}
-            />
-          )}
           <IconButton onClick={() => setWaterLevelDialogOpen(true)}>
             <InfoOutlineIcon />
           </IconButton>
         </div>
       </Box>
       <WaterLevelDialog
-        waterLevelDataset={waterLevel}
+        waterLevelDataset={station}
         open={waterLevelDialogOpen}
         onClose={() => setWaterLevelDialogOpen(false)}
       />
@@ -88,7 +140,7 @@ export default function WaterLevelInfo() {
 }
 
 type WaterLevelDialogProps = {
-  waterLevelDataset?: WaterLevelDataset;
+  waterLevelDataset?: WaterLevelStation;
   open: boolean;
   onClose: () => void;
 };
@@ -99,6 +151,10 @@ function WaterLevelDialog({
   onClose,
 }: WaterLevelDialogProps) {
   const theme = useTheme();
+
+  const lastMeasurement =
+    waterLevelDataset?.timeseries[waterLevelDataset.timeseries.length - 1];
+
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Water Level</DialogTitle>
@@ -109,20 +165,21 @@ function WaterLevelDialog({
               <TableRow>
                 <TableCell>Last measurement</TableCell>
                 <TableCell>
-                  {waterLevelDataset?.measurementTime
-                    ? new Date(
-                        waterLevelDataset?.measurementTime
-                      ).toLocaleString(undefined, {
-                        hour12: false,
-                      })
+                  {lastMeasurement?.timestamp
+                    ? new Date(lastMeasurement?.timestamp).toLocaleString(
+                        undefined,
+                        {
+                          hour12: false,
+                        }
+                      )
                     : "N/A"}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>Station</TableCell>
                 <TableCell>
-                  {waterLevelDataset?.station.longname
-                    ? waterLevelDataset?.station.longname
+                  {waterLevelDataset?.longname
+                    ? waterLevelDataset?.longname
                     : "N/A"}
                 </TableCell>
               </TableRow>

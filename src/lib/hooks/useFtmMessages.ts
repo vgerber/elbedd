@@ -1,8 +1,6 @@
-import { WaterLevelDataset } from "@/lib/models/WaterLevel";
 import { useQuery } from "@tanstack/react-query";
 import {
   Configuration,
-  ElwisFtmItem,
   ElwisFtmQueryResponse,
   FairwayTransferMessagesApi,
   SearchFtmMessagesFtmSearchPostRequest,

@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import * as fs from "fs";
 import * as path from "path";
-import {
-  WaterLevel,
-  WaterLevelDataset,
-  extractCurrentMeasurements,
-} from "@/lib/models/WaterLevel";
+import { WaterLevelStation, WaterTimeseries } from "@/lib/models/WaterLevel";
 
 const ELBE_STATION = "70272185-b2b3-4178-96b8-43bea330dcae"; // DD
-const STATION_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${ELBE_STATION}.json?includeTimeseries=true&includeCurrentMeasurement=true`;
+const STATION_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${ELBE_STATION}.json`;
+const CURRENT_MEASUREMENTS_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${ELBE_STATION}/W/measurements.json`;
+const FORECAST_MEASUREMENTS_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${ELBE_STATION}/WV/measurements.json`;
 const CACHE_FILE_PATH = path.join(process.cwd(), "cache", "water-level.json");
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
 
@@ -44,11 +42,11 @@ export async function GET() {
       console.log("No cached water level data found, downloading...");
     }
 
-    let levelData: WaterLevelDataset;
+    let stationData: WaterLevelStation;
 
     if (shouldDownload) {
       // Download fresh data from Pegelonline API
-      const response = await fetch(STATION_URL, {
+      const stationResponse = await fetch(STATION_URL, {
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; ElbeDD/1.0)",
           Accept: "application/json",
@@ -56,16 +54,43 @@ export async function GET() {
         },
       });
 
-      if (!response.ok) {
+      if (!stationResponse.ok) {
         throw new Error(
-          `Failed to fetch data: ${response.status} ${response.statusText}`
+          `Failed to fetch data: ${stationResponse.status} ${stationResponse.statusText}`
         );
       }
 
-      const stationData: WaterLevel = await response.json();
+      const levelResponse = await fetch(CURRENT_MEASUREMENTS_URL, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; ElbeDD/1.0)",
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+        },
+      });
 
-      // Extract current measurements
-      levelData = extractCurrentMeasurements(stationData);
+      if (!levelResponse.ok) {
+        throw new Error(
+          `Failed to fetch data: ${levelResponse.status} ${levelResponse.statusText}`
+        );
+      }
+
+      const levelForecastResponse = await fetch(FORECAST_MEASUREMENTS_URL, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; ElbeDD/1.0)",
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+        },
+      });
+
+      if (!levelForecastResponse.ok) {
+        throw new Error(
+          `Failed to fetch data: ${levelForecastResponse.status} ${levelForecastResponse.statusText}`
+        );
+      }
+
+      stationData = await stationResponse.json();
+      stationData.timeseries = await levelResponse.json();
+      stationData.timeseriesForecast = await levelForecastResponse.json();
 
       // Save parsed JSON to cache
       try {
@@ -76,7 +101,7 @@ export async function GET() {
         }
 
         // Write JSON data to cache
-        fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(levelData, null, 2));
+        fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(stationData, null, 2));
         console.log("Water level data cached successfully");
       } catch (cacheError) {
         console.error("Failed to cache water level data:", cacheError);
@@ -85,13 +110,13 @@ export async function GET() {
     } else {
       // Read from JSON cache
       const jsonString = fs.readFileSync(CACHE_FILE_PATH, "utf8");
-      levelData = JSON.parse(jsonString);
+      stationData = JSON.parse(jsonString);
       // Convert fetchedAt string back to Date object
-      levelData.fetchedAt = new Date(levelData.fetchedAt);
+      stationData.fetchedAt = new Date(stationData.fetchedAt);
     }
 
     // Return the JSON data with appropriate headers
-    return NextResponse.json(levelData, {
+    return NextResponse.json(stationData, {
       status: 200,
       headers: {
         "Cache-Control": "public, max-age=600", // Cache for 10 minutes

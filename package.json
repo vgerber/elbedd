@@ -14,10 +14,12 @@
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@tanstack/react-query": "^5.85.3",
+    "chart.js": "^4.5.0",
     "elwis-api": "^1.4.6",
     "leaflet": "^1.9.4",
     "next": "15.4.6",
     "react": "19.1.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "19.1.0",
     "react-leaflet": "^5.0.0-rc.2",
     "xlsx": "^0.18.5"

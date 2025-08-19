@@ -1,5 +1,4 @@
 "use client";
-import { WaterLevel } from "@/lib/models/WaterLevel";
 import { Box } from "@mui/material";
 import { ElwisFtmItem, NtsNumber } from "elwis-api";
 import { MapContainer, TileLayer } from "react-leaflet";
@@ -7,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import MapMarker, { GeoObjectItem } from "@/components/map/MapMarker";
 import { useFtmMessages } from "@/lib/hooks/useFtmMessages";
 import { useWaterMeasurements } from "@/lib/hooks/useWaterMeasurements";
-import { useWaterLevel } from "@/lib/hooks/useWaterLevel";
+import { useWaterLevelStation } from "@/lib/hooks/useWaterLevel";
 
 type FtmMessageMapProps = {
   selectedMessageId?: NtsNumber;
@@ -19,7 +18,8 @@ export default function FtmMessageMap({
   onSelectMessage,
 }: FtmMessageMapProps) {
   const { data, isLoading: isLoadingMessages } = useFtmMessages();
-  const { data: waterLevel, isLoading: isLoadingWaterLevel } = useWaterLevel();
+  const { data: station, isLoading: isLoadingWaterLevel } =
+    useWaterLevelStation();
   if (isLoadingMessages || isLoadingWaterLevel) {
     return <div>Loading messages...</div>;
   }
@@ -28,7 +28,6 @@ export default function FtmMessageMap({
   }
 
   const { messages } = data;
-  const station = waterLevel?.station;
   if (!station) {
     return <div>No water level station data available</div>;
   }
