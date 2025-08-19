@@ -10,7 +10,7 @@ import {
   parseDateTime,
 } from "@/lib/models/WaterMeasurement";
 
-const CACHE_FILE_PATH = path.join(process.cwd(), "cache", "SM.json");
+const CACHE_FILE_PATH = path.join(process.cwd(), "cache", "measurements.json");
 const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 /**

@@ -1,21 +1,28 @@
 import { FtmMessageCard } from "@/components/FtmMessageCard";
+import { useFtmMessages } from "@/lib/hooks/useFtmMessages";
 import { Stack } from "@mui/material";
 import { ElwisFtmItem, NtsNumber } from "elwis-api";
 
 type FtmMessageListProps = {
-  messages: ElwisFtmItem[];
   selectedMessageId?: NtsNumber;
   onSelectMessage?: (messageId: NtsNumber) => void;
 };
 
 export function FtmMessageList({
-  messages,
   selectedMessageId,
   onSelectMessage,
 }: FtmMessageListProps) {
+  const { data, isLoading } = useFtmMessages();
+  if (isLoading) {
+    return <div>Loading messages...</div>;
+  }
+  if (!data || data.messages.length === 0) {
+    return <div>No messages available</div>;
+  }
+
   return (
     <Stack gap={2}>
-      {messages.map((message) => (
+      {data.messages.map((message) => (
         <FtmMessageCard
           key={message.ntsNumber.number}
           message={message}

@@ -1,76 +1,11 @@
-"use client";
-import { WaterLevel } from "@/lib/models/WaterLevel";
-import { Box, useTheme } from "@mui/material";
-import { ElwisFtmItem, GeoObject, NtsNumber } from "elwis-api";
-import {
-  CircleMarker,
-  MapContainer,
-  Marker,
-  Polyline,
-  Popup,
-  TileLayer,
-  Tooltip,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { useTheme } from "@mui/material";
+import { CircleMarker, Polyline } from "react-leaflet";
+import { ElwisFtmItem, GeoObject } from "elwis-api";
 
-type FtmMessageMapProps = {
-  messages: ElwisFtmItem[];
-  station: WaterLevel;
-  selectedMessageId?: NtsNumber;
-  onSelectMessage?: (messageId: NtsNumber) => void;
-};
-
-type GeoObjectItem = {
+export type GeoObjectItem = {
   geoObject: GeoObject;
   message: ElwisFtmItem;
 };
-
-export default function FtmMessageMap({
-  messages,
-  station,
-  selectedMessageId,
-  onSelectMessage,
-}: FtmMessageMapProps) {
-  const geoObjects: GeoObjectItem[] = messages.flatMap((message) => {
-    return message.values.flatMap((value) => {
-      const objects = [];
-      if (value.fairwaySection) {
-        const section = value.fairwaySection;
-        objects.push({ geoObject: section.geoObject, message });
-      }
-      if (value.object) {
-        const object = value.object;
-        objects.push({ geoObject: object.geoObject, message });
-      }
-      return objects;
-    });
-  });
-
-  return (
-    <Box sx={{ overflow: "hidden" }}>
-      <MapContainer
-        center={[station.latitude, station.longitude]}
-        zoom={13}
-        style={{
-          height: "100%",
-        }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {geoObjects.map((item, index) => (
-          <MapMarker
-            key={index}
-            item={item}
-            onSelectMessage={() => onSelectMessage?.(item.message.ntsNumber)}
-            selected={selectedMessageId === item.message.ntsNumber}
-          />
-        ))}
-      </MapContainer>
-    </Box>
-  );
-}
 
 type MapMarkerProps = {
   item: GeoObjectItem;
@@ -78,7 +13,11 @@ type MapMarkerProps = {
   onSelectMessage?: () => void;
 };
 
-function MapMarker({ item, selected, onSelectMessage }: MapMarkerProps) {
+export default function MapMarker({
+  item,
+  selected,
+  onSelectMessage,
+}: MapMarkerProps) {
   const coordinates = item.geoObject.coordinate.map((coord) =>
     convertCoordsToArray({ lat: coord.lat, long: coord._long })
   );
@@ -96,7 +35,7 @@ function MapMarker({ item, selected, onSelectMessage }: MapMarkerProps) {
         eventHandlers={{
           click: () => (onSelectMessage ? onSelectMessage() : {}),
         }}
-      ></CircleMarker>
+      />
     );
   }
 
@@ -113,7 +52,7 @@ function MapMarker({ item, selected, onSelectMessage }: MapMarkerProps) {
         eventHandlers={{
           click: () => (onSelectMessage ? onSelectMessage() : {}),
         }}
-      ></Polyline>
+      />
     );
   }
 }

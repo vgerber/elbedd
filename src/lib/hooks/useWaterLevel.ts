@@ -7,7 +7,7 @@ import { WaterLevelDataset } from "../models/WaterLevel";
  * Fetches water level data from the API
  */
 export async function fetchWaterLevel(): Promise<WaterLevelDataset> {
-  const response = await fetch("/api/level");
+  const response = await fetch("/api/water/level");
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -40,57 +40,4 @@ export function useWaterLevel() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-}
-
-/**
- * Hook to get the current water level value
- */
-export function useCurrentWaterLevel() {
-  const { data, ...queryResult } = useWaterLevel();
-
-  return {
-    ...queryResult,
-    data: data?.currentLevel,
-    trend: data?.levelTrend,
-    measurementTime: data?.measurementTime,
-  };
-}
-
-/**
- * Hook to get the current flow rate
- */
-export function useCurrentFlow() {
-  const { data, ...queryResult } = useWaterLevel();
-
-  return {
-    ...queryResult,
-    data: data?.currentFlow,
-    trend: data?.flowTrend,
-    measurementTime: data?.measurementTime,
-  };
-}
-
-/**
- * Hook to get the current water temperature
- */
-export function useCurrentWaterTemperature() {
-  const { data, ...queryResult } = useWaterLevel();
-
-  return {
-    ...queryResult,
-    data: data?.currentTemperature,
-    measurementTime: data?.measurementTime,
-  };
-}
-
-/**
- * Hook to get station information
- */
-export function useStationInfo() {
-  const { data, ...queryResult } = useWaterLevel();
-
-  return {
-    ...queryResult,
-    data: data?.station,
-  };
 }

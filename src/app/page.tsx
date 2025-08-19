@@ -1,89 +1,62 @@
 "use client";
 
 import { FtmMessageList } from "@/components/FtmMessageList";
-import { MetaTitleBar } from "@/components/MetaTitleBar";
-import { useWaterLevel } from "@/lib/hooks/useWaterLevel";
-import { Box } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Configuration,
-  FairwayTransferMessagesApi,
-  NtsNumber,
-} from "elwis-api";
+import { MetaTitleBar } from "@/components/title/MetaTitleBar";
+import { Box, Stack, useMediaQuery, useTheme } from "@mui/material";
+import { NtsNumber } from "elwis-api";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
-const FtmMessageMap = dynamic(() => import("@/components/FtmMessageMap"), {
+const FtmMessageMap = dynamic(() => import("@/components/map/FtmMessageMap"), {
   ssr: false,
   loading: () => <div>Loading map...</div>,
 });
 
 export default function Home() {
-  const apiConfiguration = new Configuration({
-    basePath: "https://elwis.vgerber.io",
-  });
   const [selectedMessageId, setSelectedMessageId] = useState<NtsNumber | null>(
     null
   );
+  const theme = useTheme();
+  const matches = useMediaQuery(theme.breakpoints.up("md"));
 
-  const ftmApi = new FairwayTransferMessagesApi(apiConfiguration);
-
-  const { data, error, isLoading } = useQuery({
-    queryKey: ["searchFtmMessagesFtmSearchPost", "Elbe"],
-    queryFn: async () =>
-      ftmApi.searchFtmMessagesFtmSearchPost({
-        ftmQuery: {
-          fairwayName: "Elbe",
-          hectometerStart: 0,
-          hectometerEnd: 1000,
-        },
-      }),
-  });
-
-  const {
-    data: waterLevelData,
-    error: waterLevelError,
-    isLoading: isLoadingWaterLevel,
-  } = useWaterLevel();
-
-  if (isLoading || isLoadingWaterLevel) {
-    return "Loading...";
-  }
-
-  if (!data || !waterLevelData) {
-    return "No data";
-  }
-
-  if (error || waterLevelError) {
-    return `Error: ${error?.message || waterLevelError?.message}`;
-  }
-
-  const messages = data.messages;
   return (
     <Box
+      component={"main"}
       sx={{
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gridTemplateRows: "auto 1fr",
+        gridTemplateColumns: matches ? "1fr 1fr" : "1fr",
+        gridTemplateRows: matches ? "auto 1fr" : "auto 1fr min-content",
         gap: 2,
         padding: 2,
         height: "100%", // Adjust for header height
+        maxWidth: "100%",
+        minWidth: 0,
+        overflowX: "hidden",
       }}
     >
-      <div style={{ gridColumn: "1 / 3" }}>
+      <div style={{ gridColumn: matches ? "1 / 3" : "1", maxWidth: "100%" }}>
         <MetaTitleBar />
       </div>
       <FtmMessageMap
-        messages={messages}
-        station={waterLevelData?.station}
         onSelectMessage={setSelectedMessageId}
         selectedMessageId={selectedMessageId ?? undefined}
       />
-      <FtmMessageList
-        messages={messages}
-        selectedMessageId={selectedMessageId ?? undefined}
-        onSelectMessage={setSelectedMessageId}
-      />
+      <div style={{ justifySelf: "center" }}>
+        <FtmMessageList
+          selectedMessageId={selectedMessageId ?? undefined}
+          onSelectMessage={setSelectedMessageId}
+        />
+      </div>
+      <Box
+        sx={{
+          gridColumn: matches ? "1 / 3" : "1",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Stack></Stack>
+      </Box>
     </Box>
   );
 }
