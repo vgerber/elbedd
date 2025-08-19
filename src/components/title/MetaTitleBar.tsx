@@ -73,7 +73,7 @@ export function MetaTitleBar() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "1fr min-content min-content min-content",
+          gridTemplateColumns: "1fr auto min-content min-content",
           gap: 2,
           padding: 2,
           alignItems: "center",
