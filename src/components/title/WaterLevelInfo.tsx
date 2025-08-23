@@ -1,7 +1,6 @@
 import { useWaterLevelStation } from "@/lib/hooks/useWaterLevel";
 import {
   Box,
-  Chip,
   CircularProgress,
   Dialog,
   DialogContent,
@@ -27,7 +26,6 @@ import {
   LineElement,
   PointElement,
 } from "chart.js";
-import { AreaChart } from "@mui/icons-material";
 
 Chart.register(LineElement, CategoryScale, LinearScale, PointElement, Filler);
 

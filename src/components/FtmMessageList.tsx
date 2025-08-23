@@ -1,7 +1,7 @@
 import { FtmMessageCard } from "@/components/FtmMessageCard";
 import { useFtmMessages } from "@/lib/hooks/useFtmMessages";
 import { Stack } from "@mui/material";
-import { ElwisFtmItem, NtsNumber } from "elwis-api";
+import { NtsNumber } from "elwis-api";
 
 type FtmMessageListProps = {
   selectedMessageId?: NtsNumber;

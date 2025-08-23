@@ -1,11 +1,10 @@
 "use client";
 import { Box } from "@mui/material";
-import { ElwisFtmItem, NtsNumber } from "elwis-api";
+import { NtsNumber } from "elwis-api";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import MapMarker, { GeoObjectItem } from "@/components/map/MapMarker";
 import { useFtmMessages } from "@/lib/hooks/useFtmMessages";
-import { useWaterMeasurements } from "@/lib/hooks/useWaterMeasurements";
 import { useWaterLevelStation } from "@/lib/hooks/useWaterLevel";
 
 type FtmMessageMapProps = {

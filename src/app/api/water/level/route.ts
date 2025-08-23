@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import * as fs from "fs";
 import * as path from "path";
-import { WaterLevelStation, WaterTimeseries } from "@/lib/models/WaterLevel";
+import { WaterLevelStation } from "@/lib/models/WaterLevel";
 
 const ELBE_STATION = "70272185-b2b3-4178-96b8-43bea330dcae"; // DD
 const STATION_URL = `https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/${ELBE_STATION}.json`;

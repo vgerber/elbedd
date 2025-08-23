@@ -12,7 +12,6 @@ export function FtmMessageCard({
   selected,
   onSelectMessage,
 }: FtmMessageCardProps) {
-  const values = message.values;
   const theme = useTheme();
   const color = selected
     ? theme.palette.primary.main
