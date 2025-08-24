@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+[Elbe DD](https://elbedd.vgerber.io) is a dashboard for elbe related information in the area of Dresden
 
-## Getting Started
-
-First, run the development server:
+# Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+mkdir cache
+sudo chown -R 1001:1001 ./cache
+docker run -p 3000:3000 -v ./cache:/app/cache vgerber/elbedd:latest
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The water level and measurements are fetched from external sources which will be cached for a certain amount of time. To enable the cache usage it is necessary to fix the permissions of the cache which is usually mounted.
 
-## Learn More
+Therefore the docker image uses the entrypoint.sh script to ensure it can use the provided cache directory.
 
-To learn more about Next.js, take a look at the following resources:
+## Docker
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker build --build-arg VERSION=custom -t vgerber/elbedd:local .
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+mkdir cache
+sudo chown -R 1001:1001 ./cache
+docker run -p 3000:3000 -v ./cache:/app/cache vgerber/elbedd:local
+```
