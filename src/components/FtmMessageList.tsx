@@ -24,7 +24,7 @@ export function FtmMessageList({
     <Stack gap={2}>
       {data.messages.map((message) => (
         <FtmMessageCard
-          key={message.ntsNumber.number}
+          key={`${message.ntsNumber.number}-${message.ntsNumber.serialNumber}-${message.ntsNumber.year}-${message.ntsNumber.organisation}`}
           message={message}
           selected={selectedMessageId === message.ntsNumber}
           onSelectMessage={() => onSelectMessage?.(message.ntsNumber)}
