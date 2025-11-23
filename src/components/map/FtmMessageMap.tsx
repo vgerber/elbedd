@@ -16,7 +16,7 @@ export default function FtmMessageMap({
   selectedMessageId,
   onSelectMessage,
 }: FtmMessageMapProps) {
-  const { data, isLoading: isLoadingMessages } = useFtmMessages();
+  const { data, isLoading: isLoadingMessages } = useFtmMessages(true);
   const { data: station, isLoading: isLoadingWaterLevel } =
     useWaterLevelStation();
   if (isLoadingMessages || isLoadingWaterLevel) {

@@ -12,10 +12,11 @@ export function FtmMessageList({
   selectedMessageId,
   onSelectMessage,
 }: FtmMessageListProps) {
-  const { data, isLoading } = useFtmMessages();
+  const { data, isLoading } = useFtmMessages(true);
   if (isLoading) {
     return <div>Loading messages...</div>;
   }
+
   if (!data || data.messages.length === 0) {
     return <div>No messages available</div>;
   }
