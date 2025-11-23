@@ -26,10 +26,6 @@ export default function MapMarker({
     ? theme.palette.primary.main
     : theme.palette.error.main;
 
-  if (selected) {
-    console.log(selected, color, coordinates);
-  }
-
   if (coordinates.length === 1) {
     return (
       <CircleMarker
