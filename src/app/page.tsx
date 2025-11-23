@@ -32,6 +32,7 @@ export default function Home() {
         maxWidth: "100%",
         minWidth: 0,
         overflowX: "hidden",
+        minHeight: 0,
       }}
     >
       <div style={{ gridColumn: matches ? "1 / 3" : "1", maxWidth: "100%" }}>
@@ -41,22 +42,12 @@ export default function Home() {
         onSelectMessage={setSelectedMessageId}
         selectedMessageId={selectedMessageId ?? undefined}
       />
-      <div style={{ justifySelf: "center" }}>
+      <div style={{ justifySelf: "center", minHeight: 0, overflowY: "auto" }}>
         <FtmMessageList
           selectedMessageId={selectedMessageId ?? undefined}
           onSelectMessage={setSelectedMessageId}
         />
       </div>
-      <Box
-        sx={{
-          gridColumn: matches ? "1 / 3" : "1",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Stack></Stack>
-      </Box>
     </Box>
   );
 }
