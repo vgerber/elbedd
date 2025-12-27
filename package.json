@@ -17,10 +17,10 @@
     "chart.js": "^4.5.0",
     "elwis-api": "^1.4.6",
     "leaflet": "^1.9.4",
-    "next": "15.4.6",
-    "react": "19.1.0",
+    "next": "16.1.1",
+    "react": "19.2.3",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "19.1.0",
+    "react-dom": "19.2.3",
     "react-leaflet": "^5.0.0-rc.2",
     "xlsx": "^0.18.5"
   },
@@ -28,11 +28,15 @@
     "@eslint/eslintrc": "^3",
     "@types/leaflet": "^1.9.20",
     "@types/node": "^20.19.11",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
     "@types/xlsx": "^0.0.35",
     "eslint": "^9",
-    "eslint-config-next": "15.4.6",
+    "eslint-config-next": "16.1.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3"
   }
 }
