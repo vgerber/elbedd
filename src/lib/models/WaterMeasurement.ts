@@ -1,6 +1,6 @@
 /**
  * Represents a single measurement record from the water quality monitoring station
- * Updated for the new SM.xls format with 10-minute intervals
+ * Updated for the new SM.xlsx format with 10-minute intervals
  */
 export interface WaterMeasurement {
   /** Date and time of the measurement in ISO format (converted from DD.MM.YYYY HH:mm:ss) */
@@ -67,26 +67,75 @@ export interface WaterMeasurementDataset {
 }
 
 /**
- * Column mapping for the SM.xls data
- * Based on the header row: DATUM, Globalstrahlung, Leitf, LT, NH4-N, NO3-N, O2-Gehalt, O2-Sättigung, pH-Wert, SAK 254nm, Trübung, Windgeschwindigkeit, Windrichtung, WT, Gesamtchlorophyll
+ * Column header names in the SM.xlsx data
+ * Columns are looked up by header name since their order changed between file versions
+ * Header row: Station, Datum, Ammonium-N (µg/l, Gesamtchlorophyll (µg/l), Globalstrahlung (J/cm²min), Leitfähigkeit (µS/cm), Lufttemperatur (°C), Nitrat-N (mg/l, pH-Wert, SAK (254nm) (1/m), Sauerstoffgehalt (mg/l), Sauerstoffsättigung (%), Trübung (TE/F), Wassertemperatur (°C), Windgeschwindigkeit (km/h), Windrichtung (° Nord)
  */
-export const COLUMN_MAPPING = {
-  DATETIME: 0, // DATUM
-  GLOBAL_RADIATION: 1, // Globalstrahlung (J/cm²min)
-  CONDUCTIVITY: 2, // Leitf (µS/cm)
-  AIR_TEMPERATURE: 3, // LT (°C)
-  AMMONIUM_N: 4, // NH4-N (µg/l)
-  NITRATE_N: 5, // NO3-N (mg/l)
-  OXYGEN_CONTENT: 6, // O2-Gehalt (mg/l)
-  OXYGEN_SATURATION: 7, // O2-Sättigung (%)
-  PH_VALUE: 8, // pH-Wert
-  SAK_254: 9, // SAK 254nm (1/m)
-  TURBIDITY: 10, // Trübung (TE/F)
-  WIND_SPEED: 11, // Windgeschwindigkeit (km/h)
-  WIND_DIRECTION: 12, // Windrichtung (° Nord)
-  WATER_TEMPERATURE: 13, // WT (°C)
-  TOTAL_CHLOROPHYLL: 14, // Gesamtchlorophyll (µg/l)
+export const COLUMN_HEADERS = {
+  DATETIME: "Datum",
+  GLOBAL_RADIATION: "Globalstrahlung",
+  CONDUCTIVITY: "Leitfähigkeit",
+  AIR_TEMPERATURE: "Lufttemperatur",
+  AMMONIUM_N: "Ammonium-N",
+  NITRATE_N: "Nitrat-N",
+  OXYGEN_CONTENT: "Sauerstoffgehalt",
+  OXYGEN_SATURATION: "Sauerstoffsättigung",
+  PH_VALUE: "pH-Wert",
+  SAK_254: "SAK (254nm)",
+  TURBIDITY: "Trübung",
+  WIND_SPEED: "Windgeschwindigkeit",
+  WIND_DIRECTION: "Windrichtung",
+  WATER_TEMPERATURE: "Wassertemperatur",
+  TOTAL_CHLOROPHYLL: "Gesamtchlorophyll",
 } as const;
+
+const SOURCE_TIME_ZONE = "Europe/Berlin";
+
+/**
+ * Returns the UTC offset of the source time zone at the given instant in milliseconds
+ */
+function getSourceTimeZoneOffset(instant: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: SOURCE_TIME_ZONE,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(instant));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
+  const wallTime = Date.UTC(
+    part("year"),
+    part("month") - 1,
+    part("day"),
+    part("hour"),
+    part("minute"),
+    part("second")
+  );
+  return wallTime - Math.floor(instant / 1000) * 1000;
+}
+
+/**
+ * Creates a Date from a wall-clock time in the source time zone (Europe/Berlin, incl. DST)
+ * The measurement files contain German local time without an offset
+ */
+export function berlinTimeToDate(
+  year: number,
+  month: number,
+  day: number,
+  hours = 0,
+  minutes = 0,
+  seconds = 0
+): Date {
+  const wallTime = Date.UTC(year, month - 1, day, hours, minutes, seconds);
+  // Offset may differ before and after the conversion around DST changes, so refine once
+  let instant = wallTime - getSourceTimeZoneOffset(wallTime);
+  instant = wallTime - getSourceTimeZoneOffset(instant);
+  return new Date(instant);
+}
 
 /**
  * Helper function to parse numeric values, handling special cases like "<30" and German decimal notation (comma)
@@ -167,8 +216,8 @@ export function parseDateTime(dateTimeString: string): string | null {
     return null;
   }
 
-  // Create date (month is 0-indexed in JavaScript Date)
-  const date = new Date(year, month - 1, day, hours, minutes, seconds);
+  // Timestamps are German local time, independent of the server timezone
+  const date = berlinTimeToDate(year, month, day, hours, minutes, seconds);
 
   // Return ISO string
   return date.toISOString();
@@ -228,8 +277,8 @@ export function parseDateTimeToDate(dateTimeString: string): Date | null {
     return null;
   }
 
-  // Create date (month is 0-indexed in JavaScript Date)
-  return new Date(year, month - 1, day, hours, minutes, seconds);
+  // Timestamps are German local time, independent of the server timezone
+  return berlinTimeToDate(year, month, day, hours, minutes, seconds);
 }
 
 /**
@@ -258,6 +307,6 @@ export function parseDate(dateString: string): Date | null {
     return null;
   }
 
-  // Create date (month is 0-indexed in JavaScript Date)
-  return new Date(year, month - 1, day);
+  // Dates are German local time, independent of the server timezone
+  return berlinTimeToDate(year, month, day);
 }

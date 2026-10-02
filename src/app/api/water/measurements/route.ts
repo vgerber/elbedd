@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import {
   WaterMeasurement,
   WaterMeasurementDataset,
-  COLUMN_MAPPING,
+  COLUMN_HEADERS,
   parseNumericValue,
   parseDateTime,
 } from "@/lib/models/WaterMeasurement";
@@ -15,7 +15,7 @@ const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 /**
  * API route to fetch water measurements XLS file, parse it, and serve as JSON with local caching
- * Downloads from https://www.wasser.sachsen.de/stationen/download/SM.xls
+ * Downloads from https://www.wasser.sachsen.de/stationen/download/SM.xlsx
  * Caches the parsed JSON data locally and reuses it if it's less than 10 minutes old
  */
 export async function GET() {
@@ -50,12 +50,13 @@ export async function GET() {
     if (shouldDownload) {
       // Download fresh XLS data
       const response = await fetch(
-        "https://www.wasser.sachsen.de/stationen/download/SM.xls",
+        "https://www.wasser.sachsen.de/stationen/download/SM.xlsx",
         {
           headers: {
             "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            Accept: "application/vnd.ms-excel,*/*",
+            Accept:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*",
             "Accept-Language": "en-US,en;q=0.9",
             "Cache-Control": "no-cache",
           },
@@ -122,13 +123,12 @@ export async function GET() {
 
 /**
  * Converts ArrayBuffer to WaterMeasurementDataset
- * Updated for the new SM.xls format with 10-minute intervals
+ * Updated for the new SM.xlsx format with 10-minute intervals
  */
 function parseExcelData(arrayBuffer: ArrayBuffer): WaterMeasurementDataset {
   // Parse the Excel file
   const workbook = XLSX.read(arrayBuffer, { type: "array" });
 
-  // Get the first worksheet (should be 'Werte_Schmilka')
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
 
@@ -138,8 +138,28 @@ function parseExcelData(arrayBuffer: ArrayBuffer): WaterMeasurementDataset {
     raw: false,
   });
 
-  // Extract station name from sheet name
-  const stationName = sheetName || "Schmilka";
+  // Resolve column indices from the header row (row 0)
+  const headers = (jsonData[0] ?? []).map((header) => String(header).trim());
+  const columnIndex = (name: string) => {
+    const index = headers.findIndex((header) => header.startsWith(name));
+    if (index === -1) {
+      throw new Error(`Column "${name}" not found in measurements file`);
+    }
+    return index;
+  };
+  const column = Object.fromEntries(
+    Object.entries(COLUMN_HEADERS).map(([key, name]) => [
+      key,
+      columnIndex(name),
+    ])
+  ) as Record<keyof typeof COLUMN_HEADERS, number>;
+
+  // Station name is part of every row in the new format
+  const stationColumn = headers.indexOf("Station");
+  const stationName =
+    (stationColumn !== -1 && jsonData[1]?.[stationColumn]
+      ? String(jsonData[1][stationColumn])
+      : undefined) || "Schmilka";
 
   // Parse measurements starting from row 1 (index 1) - row 0 contains headers
   const measurements: WaterMeasurement[] = [];
@@ -148,35 +168,34 @@ function parseExcelData(arrayBuffer: ArrayBuffer): WaterMeasurementDataset {
     const row = jsonData[i];
     if (!row || row.length === 0) continue;
 
-    const datetimeValue = row[COLUMN_MAPPING.DATETIME];
+    const datetimeValue = row[column.DATETIME];
     if (!datetimeValue) continue; // Skip rows without datetime
 
     const measurement: WaterMeasurement = {
       datetime: parseDateTime(String(datetimeValue)) || String(datetimeValue),
-      globalRadiation: parseNumericValue(row[COLUMN_MAPPING.GLOBAL_RADIATION]),
-      conductivity: parseNumericValue(row[COLUMN_MAPPING.CONDUCTIVITY]),
-      airTemperature: parseNumericValue(row[COLUMN_MAPPING.AIR_TEMPERATURE]),
-      ammoniumN: parseNumericValue(row[COLUMN_MAPPING.AMMONIUM_N]),
-      nitrateN: parseNumericValue(row[COLUMN_MAPPING.NITRATE_N]),
-      oxygenContent: parseNumericValue(row[COLUMN_MAPPING.OXYGEN_CONTENT]),
-      oxygenSaturation: parseNumericValue(
-        row[COLUMN_MAPPING.OXYGEN_SATURATION]
-      ),
-      phValue: parseNumericValue(row[COLUMN_MAPPING.PH_VALUE]),
-      sak254: parseNumericValue(row[COLUMN_MAPPING.SAK_254]),
-      turbidity: parseNumericValue(row[COLUMN_MAPPING.TURBIDITY]),
-      windSpeed: parseNumericValue(row[COLUMN_MAPPING.WIND_SPEED]),
-      windDirection: parseNumericValue(row[COLUMN_MAPPING.WIND_DIRECTION]),
-      waterTemperature: parseNumericValue(
-        row[COLUMN_MAPPING.WATER_TEMPERATURE]
-      ),
-      totalChlorophyll: parseNumericValue(
-        row[COLUMN_MAPPING.TOTAL_CHLOROPHYLL]
-      ),
+      globalRadiation: parseNumericValue(row[column.GLOBAL_RADIATION]),
+      conductivity: parseNumericValue(row[column.CONDUCTIVITY]),
+      airTemperature: parseNumericValue(row[column.AIR_TEMPERATURE]),
+      ammoniumN: parseNumericValue(row[column.AMMONIUM_N]),
+      nitrateN: parseNumericValue(row[column.NITRATE_N]),
+      oxygenContent: parseNumericValue(row[column.OXYGEN_CONTENT]),
+      oxygenSaturation: parseNumericValue(row[column.OXYGEN_SATURATION]),
+      phValue: parseNumericValue(row[column.PH_VALUE]),
+      sak254: parseNumericValue(row[column.SAK_254]),
+      turbidity: parseNumericValue(row[column.TURBIDITY]),
+      windSpeed: parseNumericValue(row[column.WIND_SPEED]),
+      windDirection: parseNumericValue(row[column.WIND_DIRECTION]),
+      waterTemperature: parseNumericValue(row[column.WATER_TEMPERATURE]),
+      totalChlorophyll: parseNumericValue(row[column.TOTAL_CHLOROPHYLL]),
     };
 
     measurements.push(measurement);
   }
+
+  // Rows in SM.xlsx are not strictly chronological, consumers expect ascending order
+  measurements.sort(
+    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+  );
 
   return {
     stationName,
